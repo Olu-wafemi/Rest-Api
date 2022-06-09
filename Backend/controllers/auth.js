@@ -3,7 +3,7 @@ const  body = require('express-validator')
 const bcrypt = require('bcryptjs')
 const { validationResult }= require('express-validator')
 const jwt = require('jsonwebtoken') 
-exports.signup = (req,res,next) =>{
+exports.signup = async (req,res,next) =>{
     const errors = validationResult(req)
     if (!errors.isEmpty()){
         const error = new Error('Validation failed')
@@ -16,24 +16,17 @@ exports.signup = (req,res,next) =>{
     const name =req.body.name;
     const password = req.body.password
     //Hashing the password
-    bcrypt.hash(password,12)
-    .then(hashedPass=>{
-        const user = new User({ //create a new user
+   const hashedPass=  await  bcrypt.hash(password,12)
+    
+        const user = await new User({ //create a new user
             email:email,
             password: hashedPass,
             name:name
-        })
-        return user.save()
-    })
-    .then(result=>{
-        res.status(201).json({message:'User created', userId: result._id})
-    })
-    .catch(err=>{
-        if(!err.statuscode){//Check for the existence of a statusCode, if none exists return a 500 errror
-            err.statuscode = 500
-        }
-        next(err);
-    })
+        }).save()
+    
+   
+        res.status(201).json({message:'User created', userId: user._id})
+    
 
     
 }
