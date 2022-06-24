@@ -38,7 +38,7 @@ exports.getPosts = (req,res,next) =>{
 
 }
 
-exports.createPost = (req,res,next) =>{
+exports.createPost = async(req,res,next) =>{
 
     //errors is for handling errors
     const errors = validationResult(req);
@@ -67,39 +67,27 @@ exports.createPost = (req,res,next) =>{
             imageUrl:imageUrl,
             creator: req.userId,    //Get userId from the isAuth middleware that was stored when sending the token
            
-    })
-    post.save()
-    .then(result=>{
-       return  User.findById(req.userId) //After creating the post, then the userId of such post is used to find the locate the user in the database
-    }).then(user=>{
-        creator = user
-        console.log(user)
-        user.posts.push(post) //The user model has a posts attribute, the present post is then added to the User post array
-        return user.save();
-        
-
+    });
+    try{
+     await post.save()
     
-        
-                
-                
-        
-
-    }).then(result=>{
-        console.log(creator)
-        console.log(post)
-        res.status(201).json({
+    const user = await  User.findById(req.userId) //After creating the post, then the userId of such post is used to find the locate the user in the database
+    user.posts.push(post) //The user model has a posts attribute, the present post is then added to the User post array
+    const saveduser = await user.save();
+    res.status(201).json({
             message: 'Post created',
             post: post, 
-            creator:{ _id: creator._id, name: creator.name }
+            creator:{ _id: user._id, name: user.name }
             // Here we're sending the details of the creator back to the front end, after retrieving thier details from the database through the userId
         })
-    })
-    .catch(err=>{
+        return saveduser;
+    }
+    catch(err){
         if (!err.statusCode){
             err.statusCode = 500;
         }
         next(err);
-    })
+    }
 
     
 
